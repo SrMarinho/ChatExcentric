@@ -1,0 +1,31 @@
+# Dependências
+/node_modules
+
+# Ambiente
+/.env
+
+# Banco de dados SQLite local
+/prisma/dev.db
+/prisma/dev.db-journal
+
+# Arquivos gerados pelo Prisma
+/generated
+
+# Arquivos de configuração local (se houver)
+.jest.config.local
+.tsconfig.local.json
+
+# Arquivos de IDE
+.vscode
+.idea
+
+# Logs
+*.log
+logs/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Testes
+/coverage
