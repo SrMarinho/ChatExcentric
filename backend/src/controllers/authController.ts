@@ -9,12 +9,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const authController = {
   async login(req: Request, res: Response) {
-    console.log(req.body);
-
     const { email, password } = req.body;
 
     try {
-      // 1. Verificar se o usuário existe
+      //Verificar se o usuário existe
       const user = await prisma.user.findUnique({
         where: { email }
       });
@@ -23,22 +21,22 @@ export const authController = {
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
 
-      // 2. Verificar a senha
-      const passwordMatch = await bcrypt.compare(password, user.password);
+      // Verificar a senha
+      const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
       if (!passwordMatch) {
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
 
-      // 3. Gerar token JWT
+      // Gerar token JWT
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         JWT_SECRET,
         { expiresIn: '1h' }
       );
 
-      // 4. Retornar resposta com token (remover a senha do retorno)
-      const { password: _, ...userWithoutPassword } = user;
+      // Remover o password do response
+      const { passwordHash: _, ...userWithoutPassword } = user;
       
       return res.json({
         user: userWithoutPassword,
@@ -71,7 +69,7 @@ export const authController = {
       const newUser = await prisma.user.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name
         }
       });
@@ -84,7 +82,7 @@ export const authController = {
       );
 
       // 5. Retornar resposta com token (remover a senha do retorno)
-      const { password: _, ...userWithoutPassword } = newUser;
+      const { passwordHash: _, ...userWithoutPassword } = newUser;
       
       return res.status(201).json({
         user: userWithoutPassword,
