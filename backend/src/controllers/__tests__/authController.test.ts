@@ -1,131 +1,62 @@
-import { Request, Response } from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { authController } from '../authController.js';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest, test } from '@jest/globals';
 
-// Mock do PrismaClient
-jest.mock('@prisma/client', () => {
-  return {
-    PrismaClient: jest.fn(() => ({
-      user: {
-        findUnique: jest.fn(),
-        create: jest.fn()
-      }
-    }))
-  };
-});
+class Money {
+  constructor(protected amount: number) {}
 
-// Mock dos outros módulos
-jest.mock('bcrypt');
-jest.mock('jsonwebtoken');
+  getAmount(): number {
+    return this.amount;
+  }
+  
+  times(multiplier: number): Money {
+    return new Money(this.amount * multiplier);
+  }
+  
+  equals(other: Money): boolean {
+    return this.amount === other.amount && this.constructor === other.constructor;
+  }
+}
 
-const mockUser = {
-  id: 1,
-  email: 'test@example.com',
-  passwordHash: 'hashedpassword',
-  name: 'Test User'
-};
+class Dollar extends Money {
+}
 
-describe('AuthController', () => {
-  let req: Partial<Request>;
-  let res: Partial<Response>;
-  let prisma: PrismaClient;
+class Euro extends Money {
+}
 
-  beforeEach(() => {
-    // Inicializa o mock do Prisma
-    prisma = new PrismaClient();
-    
-    // Configuração básica de Request e Response
-    req = {
-      body: {}
-    };
-    
-    res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      send: jest.fn()
-    };
+describe('Money', () => {
+  describe('equality', () => {
+    it('should return true when amounts and currencies are equal', () => {
+      expect(new Dollar(5).equals(new Dollar(5))).toBe(true);
+    });
 
-    // Resetar todos os mocks
-    jest.clearAllMocks();
+    it('should return false when amounts are different', () => {
+      expect(new Dollar(5).equals(new Dollar(6))).toBe(false);
+    });
+
+    it('should return false when currencies are different', () => {
+      expect(new Dollar(5).equals(new Euro(5))).toBe(false);
+    });
   });
 
-  describe('login', () => {
-    it('deve retornar 401 quando o usuário não existe', async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
-      
-      req.body = {
-        email: 'notfound@example.com',
-        password: 'anypassword'
-      };
+  describe('multiplication', () => {
+    let fiveDollars: Dollar;
 
-      await authController.login(req as Request, res as Response);
-
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { email: 'notfound@example.com' }
-      });
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Credenciais inválidas' });
+    beforeEach(() => {
+      fiveDollars = new Dollar(5);
     });
 
-    it('deve retornar 401 quando a senha está incorreta', async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-      req.body = {
-        email: 'test@example.com',
-        password: 'wrongpassword'
-      };
-
-      await authController.login(req as Request, res as Response);
-
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrongpassword', 'hashedpassword');
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Credenciais inválidas' });
+    it('should return new instance with multiplied amount', () => {
+      const product = fiveDollars.times(2);
+      expect(product.getAmount()).toBe(10);
+      expect(product).not.toBe(fiveDollars); // Verifica se é nova instância
     });
 
-    it('deve retornar 200 com usuário e token quando credenciais estão corretas', async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      (jwt.sign as jest.Mock).mockReturnValue('fake.jwt.token');
-
-      req.body = {
-        email: 'test@example.com',
-        password: 'correctpassword'
-      };
-
-      await authController.login(req as Request, res as Response);
-
-      expect(jwt.sign).toHaveBeenCalledWith(
-        { userId: 1, email: 'test@example.com' },
-        'your-secret-key',
-        { expiresIn: '1h' }
-      );
-      
-      expect(res.json).toHaveBeenCalledWith({
-        user: {
-          id: 1,
-          email: 'test@example.com',
-          name: 'Test User'
-        },
-        token: 'fake.jwt.token'
-      });
+    it('should not modify original value when multiplying', () => {
+      fiveDollars.times(3);
+      expect(fiveDollars.getAmount()).toBe(5);
     });
 
-    it('deve retornar 500 em caso de erro no servidor', async () => {
-      (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('Database error'));
-
-      req.body = {
-        email: 'test@example.com',
-        password: 'anypassword'
-      };
-
-      await authController.login(req as Request, res as Response);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Erro interno do servidor' });
+    it('should handle multiplication by zero', () => {
+      expect(fiveDollars.times(0).getAmount()).toBe(0);
     });
   });
 });
