@@ -1,39 +1,69 @@
 import { describe, it, expect, beforeEach, jest, test } from '@jest/globals';
 
-class Money {
+abstract class Money {
   constructor(protected amount: number) {}
 
   getAmount(): number {
     return this.amount;
   }
   
-  times(multiplier: number): Money {
-    return new Money(this.amount * multiplier);
-  }
+  abstract times(multiplier: number): Money;
   
   equals(other: Money): boolean {
     return this.amount === other.amount && this.constructor === other.constructor;
   }
+
+  public static dollar(amount: number): Money {
+    return new Dollar(amount);
+  }
+
+  public static euro(amount: number): Money {
+    return new Euro(amount);
+  }
+
+  public abstract currency(): string;
 }
 
 class Dollar extends Money {
+  constructor(amount: number) {
+    super(amount);
+  }
+
+  times(multiplier: number): Money {
+    return Money.dollar(this.amount * multiplier);
+  }
+
+  currency(): string {
+    return 'USD';
+  }
 }
 
 class Euro extends Money {
+  constructor(amount: number) {
+    super(amount);
+  }
+
+  times(multiplier: number): Money {
+    return Money.euro(this.amount * multiplier);
+  }
+
+  public currency(): string {
+    return 'EUR';
+  }
 }
 
 describe('Money', () => {
   describe('equality', () => {
     it('should return true when amounts and currencies are equal', () => {
-      expect(new Dollar(5).equals(new Dollar(5))).toBe(true);
+      expect(Money.dollar(5).equals(Money.dollar(5))).toBe(true);
     });
 
     it('should return false when amounts are different', () => {
-      expect(new Dollar(5).equals(new Dollar(6))).toBe(false);
+      expect(Money.dollar(5).equals(Money.dollar(6))).toBe(false);
     });
 
     it('should return false when currencies are different', () => {
-      expect(new Dollar(5).equals(new Euro(5))).toBe(false);
+      expect(Money.dollar(5).equals(Money.euro(5))).toBe(false);
     });
   });
 
@@ -41,7 +71,7 @@ describe('Money', () => {
     let fiveDollars: Dollar;
 
     beforeEach(() => {
-      fiveDollars = new Dollar(5);
+      fiveDollars = Money.dollar(5);
     });
 
     it('should return new instance with multiplied amount', () => {
@@ -59,4 +89,14 @@ describe('Money', () => {
       expect(fiveDollars.times(0).getAmount()).toBe(0);
     });
   });
+
+  describe('Currency', () => {
+    it('should have USD to dollar currency', () => {
+      expect('USD').toBe(Money.dollar(1).currency())
+    })
+
+    it('should have EUR to euro currency', () => {
+      expect('EUR').toBe(Money.euro(1).currency())
+    })
+  })
 });
