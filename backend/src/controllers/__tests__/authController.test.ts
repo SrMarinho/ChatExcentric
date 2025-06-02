@@ -1,54 +1,33 @@
 import { describe, it, expect, beforeEach, jest, test } from '@jest/globals';
 
-abstract class Money {
-  constructor(protected amount: number) {}
+class Money {
+  constructor(
+    protected amount: number,
+    protected currency: string
+  ) { }
 
-  getAmount(): number {
+  public getAmount(): number {
     return this.amount;
   }
-  
-  abstract times(multiplier: number): Money;
-  
-  equals(other: Money): boolean {
-    return this.amount === other.amount && this.constructor === other.constructor;
+
+  public getCurrency(): string {
+    return this.currency
+  }
+
+  public equals(money: Money): boolean {
+    return this.amount === money.amount && this.currency === money.currency;
   }
 
   public static dollar(amount: number): Money {
-    return new Dollar(amount);
+    return new Money(amount, "USD");
   }
 
   public static euro(amount: number): Money {
-    return new Euro(amount);
+    return new Money(amount, "EUR");
   }
 
-  public abstract currency(): string;
-}
-
-class Dollar extends Money {
-  constructor(amount: number) {
-    super(amount);
-  }
-
-  times(multiplier: number): Money {
-    return Money.dollar(this.amount * multiplier);
-  }
-
-  currency(): string {
-    return 'USD';
-  }
-}
-
-class Euro extends Money {
-  constructor(amount: number) {
-    super(amount);
-  }
-
-  times(multiplier: number): Money {
-    return Money.euro(this.amount * multiplier);
-  }
-
-  public currency(): string {
-    return 'EUR';
+  public times(multiplier: number): Money {
+    return new Money(this.amount * multiplier, this.currency)
   }
 }
 
@@ -92,11 +71,11 @@ describe('Money', () => {
 
   describe('Currency', () => {
     it('should have USD to dollar currency', () => {
-      expect('USD').toBe(Money.dollar(1).currency())
+      expect('USD').toBe(Money.dollar(1).getCurrency())
     })
 
     it('should have EUR to euro currency', () => {
-      expect('EUR').toBe(Money.euro(1).currency())
+      expect('EUR').toBe(Money.euro(1).getCurrency())
     })
   })
 });
