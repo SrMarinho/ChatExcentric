@@ -1,18 +1,13 @@
-import { describe, it, expect, beforeEach, jest, test } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
-class Money {
+
+interface Expression {}
+
+class Money implements Expression {
   constructor(
-    protected amount: number,
-    protected currency: string
+    public amount: number,
+    public currency: string
   ) { }
-
-  public getAmount(): number {
-    return this.amount;
-  }
-
-  public getCurrency(): string {
-    return this.currency
-  }
 
   public equals(money: Money): boolean {
     return this.amount === money.amount && this.currency === money.currency;
@@ -29,10 +24,23 @@ class Money {
   public times(multiplier: number): Money {
     return new Money(this.amount * multiplier, this.currency)
   }
+
+  public plus(addend: Money): Expression {
+    return new Money(this.amount + addend.amount, this.currency)
+  }
+}
+
+class Bank {
+  constructor() {
+  }
+
+  public reduce(source: Expression, to: string): Money {
+    return Money.dollar(10)
+  }
 }
 
 describe('Money', () => {
-  describe('equality', () => {
+  describe('Equality', () => {
     it('should return true when amounts and currencies are equal', () => {
       expect(Money.dollar(5).equals(Money.dollar(5))).toBe(true);
     });
@@ -46,8 +54,8 @@ describe('Money', () => {
     });
   });
 
-  describe('multiplication', () => {
-    let fiveDollars: Dollar;
+  describe('Multiplication', () => {
+    let fiveDollars: Money;
 
     beforeEach(() => {
       fiveDollars = Money.dollar(5);
@@ -55,27 +63,37 @@ describe('Money', () => {
 
     it('should return new instance with multiplied amount', () => {
       const product = fiveDollars.times(2);
-      expect(product.getAmount()).toBe(10);
+      expect(product.amount).toBe(10);
       expect(product).not.toBe(fiveDollars); // Verifica se é nova instância
     });
 
     it('should not modify original value when multiplying', () => {
       fiveDollars.times(3);
-      expect(fiveDollars.getAmount()).toBe(5);
+      expect(fiveDollars.amount).toBe(5);
     });
 
     it('should handle multiplication by zero', () => {
-      expect(fiveDollars.times(0).getAmount()).toBe(0);
+      expect(fiveDollars.times(0).amount).toBe(0);
     });
   });
 
   describe('Currency', () => {
     it('should have USD to dollar currency', () => {
-      expect('USD').toBe(Money.dollar(1).getCurrency())
+      expect(Money.dollar(1).currency).toBe('USD')
     })
 
     it('should have EUR to euro currency', () => {
-      expect('EUR').toBe(Money.euro(1).getCurrency())
+      expect(Money.euro(1).currency).toBe('EUR')
+    })
+  })
+
+  describe('Simple addition', () => {
+    let five: Money = Money.dollar(5)
+    let sum: Expression = five.plus(five)
+    let bank: Bank = new Bank()
+    let reduced: Money = bank.reduce(sum, "USD")
+    it('should add 5 dollars and get 10 dollars', () => {
+      expect(reduced).toBe(Money.dollar(10))
     })
   })
 });

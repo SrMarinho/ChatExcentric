@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "dev": "tsx src/app.ts",
-    "test": "jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "ts-node": {
     "esm": true,
