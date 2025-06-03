@@ -26,7 +26,11 @@ class Money implements Expression {
   }
 
   public plus(addend: Money): Expression {
-    return new Money(this.amount + addend.amount, this.currency)
+    return new Sum(this, addend)
+  }
+  
+  public toString(): string {
+    return `Money(amount: ${this.amount}, currency: ${this.currency})`
   }
 }
 
@@ -39,61 +43,73 @@ class Bank {
   }
 }
 
+class Sum {
+  constructor(public augend: Money, public addend: Money) {}
+}
+
 describe('Money', () => {
-  describe('Equality', () => {
-    it('should return true when amounts and currencies are equal', () => {
-      expect(Money.dollar(5).equals(Money.dollar(5))).toBe(true);
-    });
+  describe('equals()', () => {
+    it('should consider equal when amounts and currencies match', () => {
+      expect(Money.dollar(5).equals(Money.dollar(5))).toBe(true)
+    })
 
-    it('should return false when amounts are different', () => {
-      expect(Money.dollar(5).equals(Money.dollar(6))).toBe(false);
-    });
+    it('should consider different when amounts differ', () => {
+      expect(Money.dollar(5).equals(Money.dollar(6))).toBe(false)
+    })
 
-    it('should return false when currencies are different', () => {
-      expect(Money.dollar(5).equals(Money.euro(5))).toBe(false);
-    });
-  });
+    it('should consider different when currencies differ', () => {
+      expect(Money.dollar(5).equals(Money.euro(5))).toBe(false)
+    })
+  })
 
-  describe('Multiplication', () => {
+  describe('times() - multiplication', () => {
     let fiveDollars: Money;
 
     beforeEach(() => {
-      fiveDollars = Money.dollar(5);
-    });
+      fiveDollars = Money.dollar(5)
+    })
 
-    it('should return new instance with multiplied amount', () => {
-      const product = fiveDollars.times(2);
-      expect(product.amount).toBe(10);
-      expect(product).not.toBe(fiveDollars); // Verifica se é nova instância
-    });
+    it('should return new Money instance with multiplied amount', () => {
+      const product = fiveDollars.times(2)
+      expect(product.amount).toBe(10)
+      expect(product).not.toBe(fiveDollars)
+    })
 
-    it('should not modify original value when multiplying', () => {
-      fiveDollars.times(3);
-      expect(fiveDollars.amount).toBe(5);
-    });
+    it('should be immutable - original value remains unchanged after multiplication', () => {
+      fiveDollars.times(3)
+      expect(fiveDollars.amount).toBe(5)
+    })
 
-    it('should handle multiplication by zero', () => {
-      expect(fiveDollars.times(0).amount).toBe(0);
-    });
-  });
+    it('should return zero when multiplying by zero', () => {
+      expect(fiveDollars.times(0).amount).toBe(0)
+    })
+  })
 
-  describe('Currency', () => {
-    it('should have USD to dollar currency', () => {
+  describe('currency', () => {
+    it('should correctly identify USD as dollar currency', () => {
       expect(Money.dollar(1).currency).toBe('USD')
     })
 
-    it('should have EUR to euro currency', () => {
+    it('should correctly identify EUR as euro currency', () => {
       expect(Money.euro(1).currency).toBe('EUR')
     })
   })
+  
+  describe('plus() - addition', () => {
+    it('should reduce sum of two Money instances to correct amount', () => {
+      const five = Money.dollar(5)
+      const sum = five.plus(five)
+      const bank = new Bank()
+      const reduced = bank.reduce(sum, "USD")
+      expect(reduced).toStrictEqual(Money.dollar(10))
+    })
 
-  describe('Simple addition', () => {
-    let five: Money = Money.dollar(5)
-    let sum: Expression = five.plus(five)
-    let bank: Bank = new Bank()
-    let reduced: Money = bank.reduce(sum, "USD")
-    it('should add 5 dollars and get 10 dollars', () => {
-      expect(reduced).toBe(Money.dollar(10))
+    it('should return Sum instance containing both addends', () => {
+      const five = Money.dollar(5)
+      const result = five.plus(five)
+      const sum = result as Sum
+      expect(sum.augend).toBe(five)
+      expect(sum.addend).toBe(five)
     })
   })
-});
+})
