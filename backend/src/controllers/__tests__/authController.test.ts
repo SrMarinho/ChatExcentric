@@ -28,10 +28,6 @@ class Money implements Expression {
   public plus(addend: Money): Expression {
     return new Sum(this, addend)
   }
-  
-  public toString(): string {
-    return `Money(amount: ${this.amount}, currency: ${this.currency})`
-  }
 }
 
 class Bank {
@@ -96,8 +92,13 @@ describe('Money', () => {
   })
   
   describe('plus() - addition', () => {
+    let five: Money
+
+    beforeEach(() => {
+      five = Money.dollar(5)
+    })
+
     it('should reduce sum of two Money instances to correct amount', () => {
-      const five = Money.dollar(5)
       const sum = five.plus(five)
       const bank = new Bank()
       const reduced = bank.reduce(sum, "USD")
@@ -105,7 +106,6 @@ describe('Money', () => {
     })
 
     it('should return Sum instance containing both addends', () => {
-      const five = Money.dollar(5)
       const result = five.plus(five)
       const sum = result as Sum
       expect(sum.augend).toBe(five)
